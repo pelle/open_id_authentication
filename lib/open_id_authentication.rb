@@ -138,10 +138,12 @@ module OpenIdAuthentication
       
       options[:required] ||= []  # reduces validation later
       options[:optional] ||= []
-
+      
       open_id_request = open_id_consumer.begin(identity_url)
       add_simple_registration_fields(open_id_request, options)
       add_ax_fields(open_id_request, options)
+      add_oauth_fields(open_id_request, options )
+      
       redirect_to(open_id_redirect_url(open_id_request, return_to, method))
     rescue OpenIdAuthentication::InvalidOpenId => e
       yield Result[:invalid], identity_url, nil
@@ -160,8 +162,8 @@ module OpenIdAuthentication
       when OpenID::Consumer::SUCCESS
         profile_data = {}
 
-        # merge the SReg data and the AX data into a single hash of profile data
-        [ OpenID::SReg::Response, OpenID::AX::FetchResponse ].each do |data_response|
+        # merge the SReg data, the AX data and the OAuth data into a single hash of profile data
+        [ OpenID::SReg::Response, OpenID::AX::FetchResponse, OpenID::OAuth::FetchResponse ].each do |data_response|
           if data_response.from_success_response( open_id_response )
             profile_data.merge! data_response.from_success_response( open_id_response ).data
           end
@@ -192,6 +194,13 @@ module OpenIdAuthentication
       sreg_request.request_fields(optional_fields, false) unless optional_fields.blank?
       sreg_request.policy_url = fields[:policy_url] if fields[:policy_url]
       open_id_request.add_extension(sreg_request)
+    end
+
+    def add_oauth_fields(open_id_request, options={})
+      return unless options[:oauth] && options[:oauth][:consumer]
+      oauth_request = OpenID::OAuth::Request.new options[:oauth][:consumer], options[:oauth][:scope]
+
+      open_id_request.add_extension(oauth_request)
     end
     
     def add_ax_fields( open_id_request, fields )
