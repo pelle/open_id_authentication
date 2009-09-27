@@ -1,6 +1,7 @@
 require 'uri'
 require 'openid/extensions/sreg'
 require 'openid/extensions/ax'
+require 'openid/extensions/oauth'
 require 'openid/store/filesystem'
 
 require File.dirname(__FILE__) + '/open_id_authentication/association'
@@ -162,11 +163,18 @@ module OpenIdAuthentication
       when OpenID::Consumer::SUCCESS
         profile_data = {}
 
-        # merge the SReg data, the AX data and the OAuth data into a single hash of profile data
-        [ OpenID::SReg::Response, OpenID::AX::FetchResponse, OpenID::OAuth::FetchResponse ].each do |data_response|
+        # merge the SReg data and the AX data into a single hash of profile data
+        [ OpenID::SReg::Response, OpenID::AX::FetchResponse ].each do |data_response|
           if data_response.from_success_response( open_id_response )
             profile_data.merge! data_response.from_success_response( open_id_response ).data
           end
+        end
+        
+        # If applicable add OAuth request_token and scope
+        oauth_response = OpenID::OAuth::Response.from_success_response( open_id_response )
+        if oauth_response
+          profile_data[:request_token]=oauth_response.request_token
+          profile_data[:oauth_scope]=oauth_response.scope if oauth_response.scope
         end
         
         yield Result[:successful], identity_url, profile_data
