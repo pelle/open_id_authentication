@@ -18,8 +18,10 @@ Gem::Specification.new do |s|
   ]
   s.files = [
     "CHANGELOG",
+     "MIT-LICENSE",
      "README",
      "Rakefile",
+     "VERSION",
      "generators/open_id_authentication_tables/open_id_authentication_tables_generator.rb",
      "generators/open_id_authentication_tables/templates/migration.rb",
      "generators/upgrade_open_id_authentication_tables/templates/migration.rb",
@@ -31,6 +33,8 @@ Gem::Specification.new do |s|
      "lib/open_id_authentication/nonce.rb",
      "lib/open_id_authentication/request.rb",
      "lib/open_id_authentication/timeout_fixes.rb",
+     "open_id_authentication.gemspec",
+     "rails/init.rb",
      "tasks/open_id_authentication_tasks.rake",
      "test/normalize_test.rb",
      "test/open_id_authentication_test.rb",
