@@ -1,7 +1,12 @@
 require 'uri'
 require 'openid/extensions/sreg'
 require 'openid/extensions/ax'
-require 'openid/extensions/oauth'
+begin
+  require 'openid/extensions/oauth'
+  OPENID_GEM_WITH_OAUTH_SUPPORT=true
+rescue LoadError
+  OPENID_GEM_WITH_OAUTH_SUPPORT=false
+end
 require 'openid/store/filesystem'
 
 require File.dirname(__FILE__) + '/open_id_authentication/association'
@@ -143,7 +148,8 @@ module OpenIdAuthentication
       open_id_request = open_id_consumer.begin(identity_url)
       add_simple_registration_fields(open_id_request, options)
       add_ax_fields(open_id_request, options)
-      add_oauth_fields(open_id_request, options )
+      
+      add_oauth_fields(open_id_request, options ) if OPENID_GEM_WITH_OAUTH_SUPPORT
       
       redirect_to(open_id_redirect_url(open_id_request, return_to, method))
     rescue OpenIdAuthentication::InvalidOpenId => e
@@ -170,11 +176,13 @@ module OpenIdAuthentication
           end
         end
         
-        # If applicable add OAuth request_token and scope
-        oauth_response = OpenID::OAuth::Response.from_success_response( open_id_response )
-        if oauth_response
-          profile_data[:request_token]=oauth_response.request_token
-          profile_data[:oauth_scope]=oauth_response.scope if oauth_response.scope
+        if OPENID_GEM_WITH_OAUTH_SUPPORT
+          # If applicable add OAuth request_token and scope
+          oauth_response = OpenID::OAuth::Response.from_success_response( open_id_response )
+          if oauth_response
+            profile_data[:request_token]=oauth_response.request_token
+            profile_data[:oauth_scope]=oauth_response.scope if oauth_response.scope
+          end
         end
         
         yield Result[:successful], identity_url, profile_data
